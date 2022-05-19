@@ -1,9 +1,16 @@
+import json
+from modules.utils.sh import SubProcessHelpers
+
+sh = SubProcessHelpers()
+
+
 class Commons:
     @staticmethod
-    def get_ns_list(k8s_helper, client):
+    def get_ns_list(context):
         ns_list = list()
-        success, response = k8s_helper.list_namespaces(client=client)
-        if success and hasattr(response, "items"):
-            for item in response.items:
-                ns_list.append(item.metadata.name)
+        _, out, err = sh.run_proc(f"kubectl get ns -o json --context {context}")
+        response = json.loads(out.decode())
+        if not err and hasattr(response, "items"):
+            for item in response["items"]:
+                ns_list.append(item["metadata"]["name"])
         return ns_list

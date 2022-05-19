@@ -46,7 +46,7 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
         self.refresh(layout=True)
 
     async def load_ns(self, node: TreeNode[ExplorerEntry]):
-        ns_list = commons.get_ns_list(k8s_helper=k8s_helper, client=k8s_helper.core_clients[node.data.name])
+        ns_list = commons.get_ns_list(context=node.data.name)
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:
@@ -102,15 +102,16 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
         label = Text(node.label) if isinstance(node.label, str) else node.label
         if is_hover:
             label.stylize("bold underline")
+
         if is_context:
-            label.stylize("#ebae3d")
+            label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
             icon = "💻"
         elif is_namespace:
-            label.stylize("#39cbf7")
+            label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
             icon = "📂" if expanded else "📁"
         else:
-            label.stylize("white")
-            icon = ""
+            label.stylize("bold white")
+            icon = "🌴"
             # label.highlight_regex(r"\..*$", "green")
 
         if label.plain.startswith("."):
