@@ -12,9 +12,7 @@ class K8s:
         self.core_clients: dict[str, k8s.client.CoreV1Api] = dict()
         self.custom_clients: dict[str, k8s.client.CustomObjectsApi] = dict()
         self.plural_of = dict()
-
-        # Not doing this on init cause it takes a while if you have multiple active contexts in your file
-        # self.load_contexts_and_clients()
+        self.load_contexts_and_clients()
 
     def load_contexts_and_clients(self):
         # Adding try/catch block so that tappr init does not blow up if the KUBECONFIG has no clusters/entries

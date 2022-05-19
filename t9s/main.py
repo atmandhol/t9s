@@ -1,7 +1,11 @@
 from enum import Enum
+from rich.console import Console
 from modules.widgets.header import T9s_Header
+from modules.widgets.explorer import ExplorerTree
 from textual.app import App
 from textual.widgets import Placeholder, Footer
+
+console = Console()
 
 
 class Viewer(Enum):
@@ -30,7 +34,7 @@ class T9s(App):
     async def on_mount(self) -> None:
         await self.view.dock(T9s_Header(), edge="top", size=8)
         await self.view.dock(Footer(), edge="bottom")
-        await self.view.dock(Placeholder(), edge="left", size=40, name="explorer")
+        await self.view.dock(ExplorerTree(console=console), edge="left", size=40, name="explorer")
         await self.view.dock(Placeholder(), edge="left", size=40, name="lineage")
         await self.view.dock(Placeholder(), edge="left", size=40, name="info")
         await self.view.dock(Placeholder(), edge="right", name="viewer")
@@ -42,4 +46,4 @@ class T9s(App):
             self.viewer = Viewer.YAML
 
 
-T9s.run()
+T9s.run(console=console, log="textual.log")
