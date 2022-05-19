@@ -1,32 +1,45 @@
-from prompt_toolkit import Application
-from prompt_toolkit.buffer import Buffer
-from prompt_toolkit.layout.containers import VSplit, Window
-from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
-from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.key_binding import KeyBindings
-
-kb = KeyBindings()
-buffer1 = Buffer()
-
-root_container = VSplit([
-    Window(content=BufferControl(buffer=buffer1)),
-    Window(width=1, char='|'),
-    Window(content=FormattedTextControl(text='Hello world')),
-])
-
-layout = Layout(root_container)
+from enum import Enum
+from modules.widgets.header import T9s_Header
+from textual.app import App
+from textual.widgets import Placeholder, Footer
 
 
-@kb.add('c-q')
-def exit_(event):
-    """
-    Pressing Ctrl-Q will exit the user interface.
-
-    Setting a return value means: quit the event loop that drives the user
-    interface and return this value from the `Application.run()` call.
-    """
-    event.app.exit()
+class Viewer(Enum):
+    YAML = "yaml"
+    LOGS = "logs"
 
 
-app = Application(layout=layout, full_screen=True, key_bindings=kb)
-app.run()
+class T9s(App):
+    def __init__(
+        self,
+        screen: bool = True,
+        driver_class=None,
+        log: str = "",
+        log_verbosity: int = 1,
+        title: str = "t9s",
+    ):
+        super().__init__(screen, driver_class, log, log_verbosity, title)
+        self.viewer = Viewer.YAML
+
+    async def on_load(self) -> None:
+        await self.bind("e", "view.toggle('explorer')", "Toggle Explorer")
+        await self.bind("i", "view.toggle('info')", "Toggle Info")
+        await self.bind("y", "logs_yaml_switcher()", "Toggle YAML/Logs")
+        await self.bind("q", "quit", "Quit")
+
+    async def on_mount(self) -> None:
+        await self.view.dock(T9s_Header(), edge="top", size=8)
+        await self.view.dock(Footer(), edge="bottom")
+        await self.view.dock(Placeholder(), edge="left", size=40, name="explorer")
+        await self.view.dock(Placeholder(), edge="left", size=40, name="lineage")
+        await self.view.dock(Placeholder(), edge="left", size=40, name="info")
+        await self.view.dock(Placeholder(), edge="right", name="viewer")
+
+    async def action_logs_yaml_switcher(self) -> None:
+        if self.viewer == Viewer.YAML:
+            self.viewer = Viewer.LOGS
+        else:
+            self.viewer = Viewer.YAML
+
+
+T9s.run()
