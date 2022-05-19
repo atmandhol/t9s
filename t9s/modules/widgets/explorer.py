@@ -14,11 +14,12 @@ commons = Commons()
 
 @dataclass
 class ExplorerEntry:
-    name: str
-    is_context: bool = False
-    is_namespace: bool = False
-    is_workload: bool = False
-    is_deliverable: bool = False
+    name: str = None
+    context: str = None
+    namespace: str = None
+    obj: str = None
+    workload: str = None
+    deliverable: str = None
 
 
 class ExplorerTree(TreeControl[ExplorerEntry]):
@@ -40,25 +41,41 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
 
     async def load_contexts(self, node: TreeNode[ExplorerEntry]):
         for ctx in k8s_helper.contexts:
-            await node.add(label=f"{ctx}", data=ExplorerEntry(name=ctx, is_context=True))
+            await node.add(label=f"{ctx}", data=ExplorerEntry(name=f"ctx-{ctx}", context=ctx))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
     async def load_ns(self, node: TreeNode[ExplorerEntry]):
-        ns_list = commons.get_ns_list(context=node.data.name)
+        ns_list = commons.get_ns_list(context=node.data.context)
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:
-                await node.add(label=f"{ns}", data=ExplorerEntry(name=ns, is_namespace=True))
+                await node.add(label=f"{ns}", data=ExplorerEntry(name=f"ns-{ns}", namespace=ns, context=node.data.context))
+        node.loaded = True
+        await node.expand()
+        self.refresh(layout=True)
+
+    async def load_objects(self, node: TreeNode[ExplorerEntry]):
+        objs = commons.get_all(context=node.data.context, namespace=node.data.namespace)
+        if objs and isinstance(objs, list) and len(objs) > 0:
+            for obj in objs:
+                obj_name = f"{obj['kind']}/{obj['name']}"
+                await node.add(
+                    label=obj_name,
+                    data=ExplorerEntry(name=f"obj-{obj_name}", namespace=node.data.namespace, context=node.data.context, obj=obj_name),
+                )
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
     async def handle_tree_click(self, message: TreeClick[ExplorerEntry]) -> None:
-        if message.node.data.is_context:
-            if not message.node.loaded:
+        if message.node.data.context:
+            if not message.node.loaded and not message.node.data.namespace:
                 await self.load_ns(message.node)
+                await message.node.expand()
+            elif not message.node.loaded and not message.node.data.obj:
+                await self.load_objects(message.node)
                 await message.node.expand()
             else:
                 await message.node.toggle()
@@ -71,10 +88,11 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
     def render_node(self, node: TreeNode[ExplorerEntry]) -> RenderableType:
         return self.render_tree_label(
             node,
-            node.data.is_context,
-            node.data.is_namespace,
-            node.data.is_workload,
-            node.data.is_deliverable,
+            node.data.context,
+            node.data.namespace,
+            node.data.workload,
+            node.data.deliverable,
+            node.data.obj,
             node.expanded,
             node.is_cursor,
             node.id == self.hover_node,
@@ -85,10 +103,11 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
     def render_tree_label(
         self,
         node: TreeNode[ExplorerEntry],
-        is_context: bool,
-        is_namespace: bool,
-        is_workload: bool,
-        is_deliverable: bool,
+        context: str,
+        namespace: str,
+        workload: str,
+        deliverable: str,
+        obj: str,
         expanded: bool,
         is_cursor: bool,
         is_hover: bool,
@@ -103,17 +122,17 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
         if is_hover:
             label.stylize("bold underline")
 
-        if is_context:
+        label.stylize("bold white")
+        icon = "🌴"
+        if context:
             label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
             icon = "💻"
-        elif is_namespace:
+        if namespace:
             label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
             icon = "📂" if expanded else "📁"
-        else:
-            label.stylize("bold white")
-            icon = "🌴"
-            # label.highlight_regex(r"\..*$", "green")
-
+        if obj:
+            label.stylize("bold #ffffff")
+            icon = "📦"
         if label.plain.startswith("."):
             label.stylize("dim")
 

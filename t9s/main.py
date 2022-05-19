@@ -34,8 +34,7 @@ class T9s(App):
     async def on_mount(self) -> None:
         await self.view.dock(T9s_Header(), edge="top", size=8)
         await self.view.dock(Footer(), edge="bottom")
-        await self.view.dock(ExplorerTree(console=console), edge="left", size=40, name="explorer")
-        await self.view.dock(Placeholder(), edge="left", size=40, name="lineage")
+        await self.view.dock(ExplorerTree(console=console), edge="left", size=60, name="explorer")
         await self.view.dock(Placeholder(), edge="left", size=40, name="info")
         await self.view.dock(Placeholder(), edge="right", name="viewer")
 
