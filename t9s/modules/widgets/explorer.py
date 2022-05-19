@@ -15,11 +15,10 @@ commons = Commons()
 @dataclass
 class ExplorerEntry:
     name: str = None
+    kind: str = None
     context: str = None
     namespace: str = None
-    obj: str = None
-    workload: str = None
-    deliverable: str = None
+    has_children: bool = False
 
 
 class ExplorerTree(TreeControl[ExplorerEntry]):
@@ -41,7 +40,7 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
 
     async def load_contexts(self, node: TreeNode[ExplorerEntry]):
         for ctx in k8s_helper.contexts:
-            await node.add(label=f"{ctx}", data=ExplorerEntry(name=f"ctx-{ctx}", context=ctx))
+            await node.add(label=f"ctx/{ctx}", data=ExplorerEntry(name=ctx, context=ctx, has_children=True, kind="ctx"))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
@@ -51,20 +50,36 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:
-                await node.add(label=f"{ns}", data=ExplorerEntry(name=f"ns-{ns}", namespace=ns, context=node.data.context))
+                await node.add(label=f"ns/{ns}", data=ExplorerEntry(name=ns, namespace=ns, context=node.data.context, has_children=True, kind="ns"))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
-    async def load_objects(self, node: TreeNode[ExplorerEntry]):
+    def check_if_has_children(self, objs, kind, name):
+        for obj in objs:
+            self.log(obj["owner_name"])
+            if obj["owner_kind"] == kind and obj["owner_name"] == name:
+                return True
+        return False
+
+    async def load_objects(self, node: TreeNode[ExplorerEntry], owner_kind=None, owner_name=None):
         objs = commons.get_all(context=node.data.context, namespace=node.data.namespace)
+        self.log(objs)
         if objs and isinstance(objs, list) and len(objs) > 0:
             for obj in objs:
-                obj_name = f"{obj['kind']}/{obj['name']}"
-                await node.add(
-                    label=obj_name,
-                    data=ExplorerEntry(name=f"obj-{obj_name}", namespace=node.data.namespace, context=node.data.context, obj=obj_name),
-                )
+                label = f"{obj['kind']}/{obj['name']}"
+                self.log(f'{obj["owner_kind"]}/{owner_kind}/{obj["owner_name"]}/{owner_name}')
+                if obj["owner_kind"] == owner_kind and obj["owner_name"] == owner_name:
+                    await node.add(
+                        label=label,
+                        data=ExplorerEntry(
+                            name=obj["name"],
+                            kind=obj["kind"],
+                            namespace=node.data.namespace,
+                            context=node.data.context,
+                            has_children=self.check_if_has_children(objs=objs, kind=obj["kind"], name=obj["name"]),
+                        ),
+                    )
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
@@ -74,8 +89,11 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
             if not message.node.loaded and not message.node.data.namespace:
                 await self.load_ns(message.node)
                 await message.node.expand()
-            elif not message.node.loaded and not message.node.data.obj:
-                await self.load_objects(message.node)
+            elif not message.node.loaded and message.node.data.kind == "ns":
+                await self.load_objects(message.node, None, None)
+                await message.node.expand()
+            elif not message.node.loaded and message.node.data.has_children:
+                await self.load_objects(message.node, message.node.data.kind, message.node.data.name)
                 await message.node.expand()
             else:
                 await message.node.toggle()
@@ -88,11 +106,11 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
     def render_node(self, node: TreeNode[ExplorerEntry]) -> RenderableType:
         return self.render_tree_label(
             node,
+            node.data.name,
+            node.data.kind,
             node.data.context,
             node.data.namespace,
-            node.data.workload,
-            node.data.deliverable,
-            node.data.obj,
+            node.data.has_children,
             node.expanded,
             node.is_cursor,
             node.id == self.hover_node,
@@ -103,11 +121,11 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
     def render_tree_label(
         self,
         node: TreeNode[ExplorerEntry],
+        name: str,
+        kind: str,
         context: str,
         namespace: str,
-        workload: str,
-        deliverable: str,
-        obj: str,
+        has_children: bool,
         expanded: bool,
         is_cursor: bool,
         is_hover: bool,
@@ -123,18 +141,22 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
             label.stylize("bold underline")
 
         label.stylize("bold white")
+        # Catch-all
         icon = "🌴"
-        if context:
-            label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
-            icon = "💻"
-        if namespace:
-            label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
-            icon = "📂" if expanded else "📁"
-        if obj:
+        # General
+        if kind and has_children:
+            label.stylize("bold #ffffff")
+            icon = "➕"
+        if kind and not has_children:
             label.stylize("bold #ffffff")
             icon = "📦"
-        if label.plain.startswith("."):
-            label.stylize("dim")
+        # More specific
+        if kind == "ctx":
+            label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
+            icon = "💻"
+        if kind == "ns":
+            label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
+            icon = "📂" if expanded else "📁"
 
         if is_cursor and has_focus:
             label.stylize("reverse")

@@ -27,8 +27,8 @@ class Commons:
                     {
                         "kind": f'{item["kind"]}',
                         "name": f'{item["metadata"]["name"]}',
-                        "owner_kind": f'{item["metadata"].get("ownerReferences", [{}])[0].get("kind", None)}',
-                        "owner_name": f'{item["metadata"].get("ownerReferences", [{}])[0].get("name", None)}',
+                        "owner_kind": item["metadata"].get("ownerReferences", [{}])[0].get("kind", None),
+                        "owner_name": item["metadata"].get("ownerReferences", [{}])[0].get("name", None),
                     }
                 )
         return obj_list

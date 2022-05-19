@@ -16,11 +16,7 @@ class T9s_Footer(Footer):
             end="",
         )
         for binding in self.app.bindings.shown_keys:
-            key_display = (
-                binding.key.upper()
-                if binding.key_display is None
-                else binding.key_display
-            )
+            key_display = binding.key.upper() if binding.key_display is None else binding.key_display
             hovered = self.highlight_key == binding.key
             key_text = Text.assemble(
                 (f" {key_display} ", "reverse" if hovered else "default on default"),
