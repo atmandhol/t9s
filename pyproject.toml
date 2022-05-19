@@ -1,0 +1,24 @@
+[tool.black]
+line-length = 148
+
+[tool.poetry]
+name = "t9s"
+version = "0.1.0"
+description = "k9s inspired TUI for Tanzu Application Platform"
+authors = ["Atman Dhol <github.com/atmandhol>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+kubernetes = "^23.3.0"
+rich = "^12.2.0"
+prompt-toolkit = "^3.0.29"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[tool.poetry.scripts]
+t9s = "t9s.main:app"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
