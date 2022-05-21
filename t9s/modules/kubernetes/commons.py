@@ -127,28 +127,25 @@ class Commons:
     def item_to_resource(ctx, ns, item, kind=None):
         try:
             return Resource(
-                name=item["metadata"]["name"],
-                kind=item["kind"] if not kind else kind,
+                name=item.get("metadata", {}).get("name", "Undefined"),
+                kind=item.get("kind", "Undefined") if not kind else kind,
                 context=ctx,
                 namespace=ns,
-                uid=item["metadata"]["uid"] if "uid" in item["metadata"] else None,
-                owner=item["metadata"].get("ownerReferences", [{}])[0].get("uid", None),
-                metadata=item["metadata"] if "metadata" in item else None,
-                spec=item["spec"] if "spec" in item else None,
-                status=item["status"] if "status" in item else None,
+                uid=item.get("metadata", {}).get("uid", None),
+                owner=item.get("metadata", {}).get("ownerReferences", [{}])[0].get("uid", None),
+                metadata=item.get("metadata", {}),
+                spec=item.get("spec", {}),
+                status=item.get("status", {}),
             )
-        except TypeError:
-            try:
-                return Resource(
-                    name=item.metadata.name,
-                    kind=item.kind if not kind else kind,
-                    context=ctx,
-                    namespace=ns,
-                    uid=item.metadata.uid,
-                    owner=item.metadata.owner_references[0].uid,
-                    metadata=item.metadata,
-                    spec=item.spec,
-                    status=item.status,
-                )
-            except Exception:
-                return None
+        except Exception:
+            return Resource(
+                name=item.metadata.name,
+                kind=item.kind if not kind else kind,
+                context=ctx,
+                namespace=ns,
+                uid=item.metadata.uid,
+                owner=item.metadata.owner_references[0].uid if item.metadata.owner_references and len(item.metadata.owner_references) > 0 else None,
+                metadata=item.metadata if item.metadata else {},
+                spec=item.spec if item.spec else {},
+                status=item.status if item.status else {},
+            )

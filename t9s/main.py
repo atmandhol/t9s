@@ -4,7 +4,7 @@ from modules.widgets.header import T9s_Header
 from modules.widgets.footer import T9s_Footer
 from modules.widgets.explorer import ExplorerTree
 from textual.app import App
-from textual.widgets import Placeholder
+from textual.widgets import Placeholder, ScrollView
 
 console = Console()
 
@@ -35,7 +35,7 @@ class T9s(App):
     async def on_mount(self) -> None:
         await self.view.dock(T9s_Header(), edge="top", size=8)
         await self.view.dock(T9s_Footer(), edge="bottom")
-        await self.view.dock(ExplorerTree(console=console), edge="left", size=60, name="explorer")
+        await self.view.dock(ScrollView(contents=ExplorerTree(console=console)), edge="left", size=60, name="explorer")
         await self.view.dock(Placeholder(), edge="left", size=40, name="info")
         await self.view.dock(Placeholder(), edge="right", name="viewer")
 

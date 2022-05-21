@@ -106,7 +106,7 @@ class ExplorerTree(TreeControl[Resource]):
             if hierarchy[uid]:
                 await self.load_objects(node=child, objs=objs, hierarchy=hierarchy[uid])
         node.loaded = True
-        # await node.expand()
+        await node.expand() if node.parent.data.kind != "Namespace" else None
         self.refresh(layout=True)
 
     async def handle_tree_click(self, message: TreeClick[Resource]) -> None:
