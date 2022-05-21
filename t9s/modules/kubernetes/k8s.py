@@ -75,3 +75,35 @@ class K8s:
             return True, response
         except ApiException as err:
             return False, err
+
+    @staticmethod
+    def list_configmaps_in_namespace(client: k8s.client.CoreV1Api, namespace):
+        try:
+            response = client.list_namespaced_config_map(namespace=namespace)
+            return True, response
+        except ApiException as err:
+            return False, err
+
+    @staticmethod
+    def list_secrets_in_namespace(client: k8s.client.CoreV1Api, namespace):
+        try:
+            response = client.list_namespaced_secret(namespace=namespace)
+            return True, response
+        except ApiException as err:
+            return False, err
+
+    @staticmethod
+    def list_service_accounts_in_namespace(client: k8s.client.CoreV1Api, namespace):
+        try:
+            response = client.list_namespaced_service_account(namespace=namespace)
+            return True, response
+        except ApiException as err:
+            return False, err
+
+    @staticmethod
+    def list_pv_claims_in_namespace(client: k8s.client.CoreV1Api, namespace):
+        try:
+            response = client.list_namespaced_persistent_volume_claim(namespace=namespace)
+            return True, response
+        except ApiException as err:
+            return False, err

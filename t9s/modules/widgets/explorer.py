@@ -95,7 +95,7 @@ class ExplorerTree(TreeControl[Resource]):
         if not objs or not hierarchy:
             objs = await self.get_objs_for_ctx_ns(ctx=node.data.context, ns=node.data.namespace)
             hierarchy = commons.get_hierarchy(objs=objs)
-
+        # TODO: Group namespace level ConfigMaps, Secrets and SAs under 1 main kind group. i.e. All secrets under "Secrets/"
         uid_list = hierarchy.keys()
         for uid in uid_list:
             resource = self.get_resource_by_uid(uid=uid, objs=objs)
@@ -161,20 +161,24 @@ class ExplorerTree(TreeControl[Resource]):
 
         label.stylize("bold white")
         # Catch-all
-        icon = "🌴"
+        icon = "📔"
         # General
-        if kind and has_children:
+        if kind and not expanded and has_children:
             label.stylize("bold #ffffff")
-            icon = "➕"
-        if kind and not has_children:
+            icon = "🔽"
+        if kind and expanded and has_children:
             label.stylize("bold #ffffff")
-            icon = "📦"
+            icon = "🔼"
         # More specific
         if kind == "Context":
             label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
-            icon = "💻"
+            icon = "🖥 "
         if kind == "Pod":
+            label.stylize("#b8b6b6")
             icon = "🐳"
+        if kind in ["ConfigMap", "ServiceAccount", "Secret", "PersistentVolumeClaim"]:
+            label.stylize("#b8b6b6")
+            icon = "🔑"
         if kind == "Namespace":
             label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
             icon = "📂" if expanded else "📁"

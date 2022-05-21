@@ -105,6 +105,7 @@ class Commons:
 
     def list_all_core_objects(self, ctx, ns):
         # TODO: Add daemonset, statefulset, job, cronjobs etc that is supported in the apps api
+        # TODO: Sort items by group
         objs = list[Resource]()
         success, response = k8s.list_pods_in_namespace(k8s.core_clients[ctx], ns)
         if success:
@@ -120,6 +121,26 @@ class Commons:
         if success:
             for item in response.items:
                 resource = self.item_to_resource(ctx=ctx, ns=ns, item=item, kind="ReplicaSet")
+                objs.append(resource) if resource else None
+        success, response = k8s.list_configmaps_in_namespace(k8s.core_clients[ctx], ns)
+        if success:
+            for item in response.items:
+                resource = self.item_to_resource(ctx=ctx, ns=ns, item=item, kind="ConfigMap")
+                objs.append(resource) if resource else None
+        success, response = k8s.list_secrets_in_namespace(k8s.core_clients[ctx], ns)
+        if success:
+            for item in response.items:
+                resource = self.item_to_resource(ctx=ctx, ns=ns, item=item, kind="Secret")
+                objs.append(resource) if resource else None
+        success, response = k8s.list_service_accounts_in_namespace(k8s.core_clients[ctx], ns)
+        if success:
+            for item in response.items:
+                resource = self.item_to_resource(ctx=ctx, ns=ns, item=item, kind="ServiceAccount")
+                objs.append(resource) if resource else None
+        success, response = k8s.list_pv_claims_in_namespace(k8s.core_clients[ctx], ns)
+        if success:
+            for item in response.items:
+                resource = self.item_to_resource(ctx=ctx, ns=ns, item=item, kind="PersistentVolumeClaim")
                 objs.append(resource) if resource else None
         return objs
 
@@ -145,7 +166,7 @@ class Commons:
                 namespace=ns,
                 uid=item.metadata.uid,
                 owner=item.metadata.owner_references[0].uid if item.metadata.owner_references and len(item.metadata.owner_references) > 0 else None,
-                metadata=item.metadata if item.metadata else {},
-                spec=item.spec if item.spec else {},
-                status=item.status if item.status else {},
+                metadata=item.metadata if hasattr(item, "metadata") else {},
+                spec=item.spec if hasattr(item, "spec") else {},
+                status=item.status if hasattr(item, "status") else {},
             )
