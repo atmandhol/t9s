@@ -3,6 +3,8 @@ from rich.text import Text, TextType
 from textual.reactive import Reactive
 from textual.widget import RenderableType
 from textual.widgets import TreeClick, TreeControl, TreeNode, NodeID
+
+# noinspection PyProtectedMember
 from textual.widgets._tree_control import NodeDataType
 
 from modules.kubernetes.k8s import K8s

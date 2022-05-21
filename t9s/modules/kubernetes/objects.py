@@ -10,6 +10,9 @@ class Resource:
     uid: str = None
     owner: str = None
     has_children: bool = False
+    metadata: dict = None
+    spec: dict = None
+    status: dict = None
 
 
 @dataclass

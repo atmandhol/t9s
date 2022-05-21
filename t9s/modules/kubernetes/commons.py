@@ -133,6 +133,9 @@ class Commons:
                 namespace=ns,
                 uid=item["metadata"]["uid"] if "uid" in item["metadata"] else None,
                 owner=item["metadata"].get("ownerReferences", [{}])[0].get("uid", None),
+                metadata=item["metadata"] if "metadata" in item else None,
+                spec=item["spec"] if "spec" in item else None,
+                status=item["status"] if "status" in item else None,
             )
         except TypeError:
             try:
@@ -143,6 +146,9 @@ class Commons:
                     namespace=ns,
                     uid=item.metadata.uid,
                     owner=item.metadata.owner_references[0].uid,
+                    metadata=item.metadata,
+                    spec=item.spec,
+                    status=item.status,
                 )
             except Exception:
                 return None
