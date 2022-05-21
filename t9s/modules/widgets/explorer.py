@@ -5,25 +5,16 @@ from textual.widget import RenderableType
 from textual.widgets import TreeClick, TreeControl, TreeNode
 from modules.kubernetes.k8s import K8s
 from modules.kubernetes.commons import Commons
-from dataclasses import dataclass
+from modules.kubernetes.objects import Resource
 from functools import lru_cache
 
 k8s_helper = K8s()
 commons = Commons()
 
 
-@dataclass
-class ExplorerEntry:
-    name: str = None
-    kind: str = None
-    context: str = None
-    namespace: str = None
-    has_children: bool = False
-
-
-class ExplorerTree(TreeControl[ExplorerEntry]):
+class ExplorerTree(TreeControl[Resource]):
     def __init__(self, console: rich.console.Console) -> None:
-        data = ExplorerEntry(name="/")
+        data = Resource(name="/")
         super().__init__(label=Text("K8s Contexts"), name="Explorer", data=data)
         self.rich_console = console
 
@@ -38,62 +29,74 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
     async def on_mount(self) -> None:
         await self.load_contexts(self.root)
 
-    async def load_contexts(self, node: TreeNode[ExplorerEntry]):
+    async def load_contexts(self, node: TreeNode[Resource]):
         for ctx in k8s_helper.contexts:
-            await node.add(label=f"ctx/{ctx}", data=ExplorerEntry(name=ctx, context=ctx, has_children=True, kind="ctx"))
+            await node.add(label=f"ctx/{ctx}", data=Resource(name=ctx, kind="Context", context=ctx))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
-    async def load_ns(self, node: TreeNode[ExplorerEntry]):
+    async def load_ns(self, node: TreeNode[Resource]):
         ns_list = commons.get_ns_list(context=node.data.context)
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:
-                await node.add(label=f"ns/{ns}", data=ExplorerEntry(name=ns, namespace=ns, context=node.data.context, has_children=True, kind="ns"))
+                await node.add(label=f"ns/{ns}", data=Resource(name=ns, kind="Namespace", context=node.data.context, namespace=ns))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
-    def check_if_has_children(self, objs, kind, name):
-        for obj in objs:
-            self.log(obj["owner_name"])
-            if obj["owner_kind"] == kind and obj["owner_name"] == name:
-                return True
-        return False
+    @staticmethod
+    async def get_objs_for_ctx_ns(ctx, ns):
+        objs = list()
+        crds = commons.list_all_namespaced_crds(ctx=ctx)
+        for crd in crds:
+            co_list = commons.list_all_custom_objects_by_type(ctx=ctx, ns=ns, crd=crd)
+            for co in co_list:
+                objs.append(co)
+        return objs + commons.list_all_core_objects(ctx=ctx, ns=ns)
 
-    async def load_objects(self, node: TreeNode[ExplorerEntry], owner_kind=None, owner_name=None):
-        objs = commons.get_all(context=node.data.context, namespace=node.data.namespace)
-        self.log(objs)
-        if objs and isinstance(objs, list) and len(objs) > 0:
-            for obj in objs:
-                label = f"{obj['kind']}/{obj['name']}"
-                self.log(f'{obj["owner_kind"]}/{owner_kind}/{obj["owner_name"]}/{owner_name}')
-                if obj["owner_kind"] == owner_kind and obj["owner_name"] == owner_name:
-                    await node.add(
-                        label=label,
-                        data=ExplorerEntry(
-                            name=obj["name"],
-                            kind=obj["kind"],
-                            namespace=node.data.namespace,
-                            context=node.data.context,
-                            has_children=self.check_if_has_children(objs=objs, kind=obj["kind"], name=obj["name"]),
-                        ),
-                    )
+    @staticmethod
+    def get_resource_by_uid(uid, objs: list[Resource]):
+        for o in objs:
+            if o.uid == uid:
+                return o
+        return None
+
+    async def load_objects(self, node: TreeNode[Resource], objs: list[Resource] = None, hierarchy: dict = None):
+        """
+        :param node: node is the current node on the tree, for this level it will be namespace for first run of recursion
+        :param objs: is a list of all objects in namespace, pass this bad boy along in recursion
+        :param hierarchy: hierarchy dict that specifies the UID hierarchy
+        :return:
+        """
+        if not objs or not hierarchy:
+            objs = await self.get_objs_for_ctx_ns(ctx=node.data.context, ns=node.data.namespace)
+            hierarchy = commons.get_hierarchy(objs=objs)
+
+        uid_list = hierarchy.keys()
+        for uid in uid_list:
+            resource = self.get_resource_by_uid(uid=uid, objs=objs)
+            label = f"{resource.kind}/{resource.name}"
+            # t = TreeNode(parent=node, node_id=label,)
+            await node.add(
+                label=label,
+                data=resource
+            )
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
-    async def handle_tree_click(self, message: TreeClick[ExplorerEntry]) -> None:
+    async def handle_tree_click(self, message: TreeClick[Resource]) -> None:
         if message.node.data.context:
-            if not message.node.loaded and not message.node.data.namespace:
+            if not message.node.loaded and message.node.data.kind == "Context":
                 await self.load_ns(message.node)
                 await message.node.expand()
-            elif not message.node.loaded and message.node.data.kind == "ns":
-                await self.load_objects(message.node, None, None)
+            elif not message.node.loaded and message.node.data.kind == "Namespace":
+                await self.load_objects(message.node)
                 await message.node.expand()
             elif not message.node.loaded and message.node.data.has_children:
-                await self.load_objects(message.node, message.node.data.kind, message.node.data.name)
+                await self.load_objects(message.node, None, None)
                 await message.node.expand()
             else:
                 await message.node.toggle()
@@ -103,13 +106,10 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
             await self.emit(FileClick(self, dir_entry.path))
         """
 
-    def render_node(self, node: TreeNode[ExplorerEntry]) -> RenderableType:
+    def render_node(self, node: TreeNode[Resource]) -> RenderableType:
         return self.render_tree_label(
             node,
-            node.data.name,
             node.data.kind,
-            node.data.context,
-            node.data.namespace,
             node.data.has_children,
             node.expanded,
             node.is_cursor,
@@ -120,11 +120,8 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
     @lru_cache(maxsize=1024 * 32)
     def render_tree_label(
         self,
-        node: TreeNode[ExplorerEntry],
-        name: str,
+        node: TreeNode[Resource],
         kind: str,
-        context: str,
-        namespace: str,
         has_children: bool,
         expanded: bool,
         is_cursor: bool,
@@ -151,10 +148,10 @@ class ExplorerTree(TreeControl[ExplorerEntry]):
             label.stylize("bold #ffffff")
             icon = "📦"
         # More specific
-        if kind == "ctx":
+        if kind == "Context":
             label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
             icon = "💻"
-        if kind == "ns":
+        if kind == "Namespace":
             label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
             icon = "📂" if expanded else "📁"
 
