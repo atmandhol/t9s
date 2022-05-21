@@ -1,5 +1,6 @@
 import rich
 from rich.text import Text, TextType
+from textual import events
 from textual.reactive import Reactive
 from textual.widget import RenderableType
 from textual.widgets import TreeClick, TreeControl, TreeNode, NodeID
@@ -25,6 +26,7 @@ class ExplorerTree(TreeControl[Resource]):
 
     has_focus: Reactive[bool] = Reactive(False)
 
+    # Overloading Methods
     async def add(
         self,
         node_id: NodeID,
@@ -41,15 +43,37 @@ class ExplorerTree(TreeControl[Resource]):
         self.refresh(layout=True)
         return child_node
 
+    # Overload Handlers
     def on_focus(self) -> None:
         self.has_focus = Reactive(True)
 
     def on_blur(self) -> None:
         self.has_focus = Reactive(False)
 
+    async def key_down(self, event: events.Key) -> None:
+        event.stop()
+        await self.cursor_down()
+        cursor_node = self.nodes[self.cursor]
+        # TODO: Set a reactive current node that changes info panel
+        # await self.post_message(TreeClick(self, cursor_node))
+
+    async def key_up(self, event: events.Key) -> None:
+        event.stop()
+        await self.cursor_up()
+        cursor_node = self.nodes[self.cursor]
+        # TODO: Set a reactive current node that changes info panel
+        # await self.post_message(TreeClick(self, cursor_node))
+
+    async def key_enter(self, event: events.Key) -> None:
+        cursor_node = self.nodes[self.cursor]
+        event.stop()
+        # TODO: Set a reactive current node that changes info panel
+        await self.post_message(TreeClick(self, cursor_node))
+
     async def on_mount(self) -> None:
         await self.load_contexts(self.root)
 
+    # Data Loading methods
     async def load_contexts(self, node: TreeNode[Resource]):
         for ctx in k8s_helper.contexts:
             await node.add(label=f"ctx/{ctx}", data=Resource(name=ctx, kind="Context", context=ctx))
@@ -163,6 +187,8 @@ class ExplorerTree(TreeControl[Resource]):
         # Catch-all
         icon = "📔"
         # General
+        if not has_children:
+            label.stylize("#b8b6b6")
         if kind and not expanded and has_children:
             label.stylize("bold #ffffff")
             icon = "🔽"

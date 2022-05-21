@@ -24,18 +24,22 @@ class T9s(App):
         title: str = "t9s",
     ):
         super().__init__(screen, driver_class, log, log_verbosity, title)
+        self.explorer = None
         self.viewer = Viewer.YAML
 
     async def on_load(self) -> None:
         await self.bind("e", "view.toggle('explorer')", "Toggle Explorer")
+        await self.bind("x", "focus_explorer()", "Focus Explorer")
         await self.bind("i", "view.toggle('info')", "Toggle Info")
+        await self.bind("c", "focus_info()", "Focus Info")
         await self.bind("y", "logs_yaml_switcher()", "Toggle YAML/Logs")
         await self.bind("q", "quit", "Quit")
 
     async def on_mount(self) -> None:
+        self.explorer = ExplorerTree(console=console)
         await self.view.dock(T9s_Header(), edge="top", size=8)
         await self.view.dock(T9s_Footer(), edge="bottom")
-        await self.view.dock(ScrollView(contents=ExplorerTree(console=console)), edge="left", size=60, name="explorer")
+        await self.view.dock(ScrollView(contents=self.explorer), edge="left", size=60, name="explorer")
         await self.view.dock(Placeholder(), edge="left", size=40, name="info")
         await self.view.dock(Placeholder(), edge="right", name="viewer")
 
@@ -44,6 +48,12 @@ class T9s(App):
             self.viewer = Viewer.LOGS
         else:
             self.viewer = Viewer.YAML
+
+    async def action_focus_explorer(self) -> None:
+        await self.explorer.focus()
+
+    async def action_focus_info(self) -> None:
+        pass
 
 
 T9s.run(console=console, log="textual.log")
