@@ -1,8 +1,10 @@
 import rich
-from rich.text import Text
+from rich.text import Text, TextType
 from textual.reactive import Reactive
 from textual.widget import RenderableType
-from textual.widgets import TreeClick, TreeControl, TreeNode
+from textual.widgets import TreeClick, TreeControl, TreeNode, NodeID
+from textual.widgets._tree_control import NodeDataType
+
 from modules.kubernetes.k8s import K8s
 from modules.kubernetes.commons import Commons
 from modules.kubernetes.objects import Resource
@@ -12,6 +14,7 @@ k8s_helper = K8s()
 commons = Commons()
 
 
+# noinspection PyProtectedMember
 class ExplorerTree(TreeControl[Resource]):
     def __init__(self, console: rich.console.Console) -> None:
         data = Resource(name="/")
@@ -19,6 +22,22 @@ class ExplorerTree(TreeControl[Resource]):
         self.rich_console = console
 
     has_focus: Reactive[bool] = Reactive(False)
+
+    async def add(
+        self,
+        node_id: NodeID,
+        label: TextType,
+        data: NodeDataType,
+    ):
+        parent = self.nodes[node_id]
+        self.id = NodeID(self.id + 1)
+        child_tree = parent._tree.add(label)
+        child_node: TreeNode[NodeDataType] = TreeNode(parent, self.id, self, child_tree, label, data)
+        parent.children.append(child_node)
+        child_tree.label = child_node
+        self.nodes[self.id] = child_node
+        self.refresh(layout=True)
+        return child_node
 
     def on_focus(self) -> None:
         self.has_focus = Reactive(True)
@@ -63,6 +82,7 @@ class ExplorerTree(TreeControl[Resource]):
                 return o
         return None
 
+    # noinspection PyTypeChecker
     async def load_objects(self, node: TreeNode[Resource], objs: list[Resource] = None, hierarchy: dict = None):
         """
         :param node: node is the current node on the tree, for this level it will be namespace for first run of recursion
@@ -77,14 +97,14 @@ class ExplorerTree(TreeControl[Resource]):
         uid_list = hierarchy.keys()
         for uid in uid_list:
             resource = self.get_resource_by_uid(uid=uid, objs=objs)
+            if hierarchy[uid]:
+                resource.has_children = True
             label = f"{resource.kind}/{resource.name}"
-            # t = TreeNode(parent=node, node_id=label,)
-            await node.add(
-                label=label,
-                data=resource
-            )
+            child = await self.add(node_id=node.id, label=label, data=resource)
+            if hierarchy[uid]:
+                await self.load_objects(node=child, objs=objs, hierarchy=hierarchy[uid])
         node.loaded = True
-        await node.expand()
+        # await node.expand()
         self.refresh(layout=True)
 
     async def handle_tree_click(self, message: TreeClick[Resource]) -> None:
@@ -151,6 +171,8 @@ class ExplorerTree(TreeControl[Resource]):
         if kind == "Context":
             label.stylize("#ebae3d") if not expanded else label.stylize("bold #f5ca7a")
             icon = "💻"
+        if kind == "Pod":
+            icon = "🐳"
         if kind == "Namespace":
             label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
             icon = "📂" if expanded else "📁"
