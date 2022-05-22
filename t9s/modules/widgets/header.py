@@ -10,7 +10,7 @@ class T9s_Header(Widget):
         self.mouse_over = Reactive(False)
 
     def render(self) -> Panel:
-        return Panel(pyfiglet.Figlet(font="speed", width=80).renderText("t9s"), style="bold #69b4ff")
+        return Panel(pyfiglet.Figlet(font="speed", width=40).renderText("t9s"), style="bold #69b4ff", border_style="black")
 
     def on_enter(self) -> None:
         self.mouse_over = True

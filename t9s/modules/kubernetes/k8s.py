@@ -1,10 +1,11 @@
+import json
 import kubernetes as k8s
 from kubernetes.client import ApiException
 
 
 # noinspection PyBroadException
 class K8s:
-    def __init__(self):
+    def __init__(self, logger):
         self.config = k8s.config
         self.client = k8s.client
         self.contexts: list[str] = list()
@@ -14,6 +15,7 @@ class K8s:
         self.apps_clients: dict[str, k8s.client.AppsV1Api] = dict()
         self.plural_of = dict()
         self.load_contexts_and_clients()
+        self.log = logger
 
     def load_contexts_and_clients(self):
         # Adding try/catch block so that tappr init does not blow up if the KUBECONFIG has no clusters/entries
@@ -39,71 +41,73 @@ class K8s:
     @staticmethod
     def get_all_crds(client: k8s.client.ApiextensionsV1Api):
         try:
-            response = client.list_custom_resource_definition()
-            return True, response
+            response = client.list_custom_resource_definition(_preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_custom_objects_in_namespace(client: k8s.client.CustomObjectsApi, namespace, group, version, plural):
         try:
-            response = client.list_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural)
-            return True, response
+            response = client.list_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, _preload_content=False
+            )
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_pods_in_namespace(client: k8s.client.CoreV1Api, namespace):
         try:
-            response = client.list_namespaced_pod(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_pod(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_deployments_in_namespace(client: k8s.client.AppsV1Api, namespace):
         try:
-            response = client.list_namespaced_deployment(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_deployment(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_replicasets_in_namespace(client: k8s.client.AppsV1Api, namespace):
         try:
-            response = client.list_namespaced_replica_set(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_replica_set(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_configmaps_in_namespace(client: k8s.client.CoreV1Api, namespace):
         try:
-            response = client.list_namespaced_config_map(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_config_map(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_secrets_in_namespace(client: k8s.client.CoreV1Api, namespace):
         try:
-            response = client.list_namespaced_secret(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_secret(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_service_accounts_in_namespace(client: k8s.client.CoreV1Api, namespace):
         try:
-            response = client.list_namespaced_service_account(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_service_account(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err
 
     @staticmethod
     def list_pv_claims_in_namespace(client: k8s.client.CoreV1Api, namespace):
         try:
-            response = client.list_namespaced_persistent_volume_claim(namespace=namespace)
-            return True, response
+            response = client.list_namespaced_persistent_volume_claim(namespace=namespace, _preload_content=False)
+            return True, json.loads(response.data)
         except ApiException as err:
             return False, err

@@ -13,9 +13,6 @@ from modules.kubernetes.commons import Commons
 from modules.kubernetes.objects import Resource
 from functools import lru_cache
 
-k8s_helper = K8s()
-commons = Commons()
-
 
 # noinspection PyProtectedMember
 class ExplorerTree(TreeControl[Resource]):
@@ -23,6 +20,8 @@ class ExplorerTree(TreeControl[Resource]):
         data = Resource(name="/")
         super().__init__(label=Text("K8s Contexts"), name="Explorer", data=data)
         self.rich_console = console
+        self.k8s_helper = K8s(self.log)
+        self.commons = Commons(logger=self.log)
 
     has_focus: Reactive[bool] = Reactive(False)
 
@@ -75,14 +74,14 @@ class ExplorerTree(TreeControl[Resource]):
 
     # Data Loading methods
     async def load_contexts(self, node: TreeNode[Resource]):
-        for ctx in k8s_helper.contexts:
+        for ctx in self.k8s_helper.contexts:
             await node.add(label=f"ctx/{ctx}", data=Resource(name=ctx, kind="Context", context=ctx))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
 
     async def load_ns(self, node: TreeNode[Resource]):
-        ns_list = commons.get_ns_list(context=node.data.context)
+        ns_list = self.commons.get_ns_list(context=node.data.context)
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:
@@ -91,15 +90,14 @@ class ExplorerTree(TreeControl[Resource]):
         await node.expand()
         self.refresh(layout=True)
 
-    @staticmethod
-    async def get_objs_for_ctx_ns(ctx, ns):
+    async def get_objs_for_ctx_ns(self, ctx, ns):
         objs = list()
-        crds = commons.list_all_namespaced_crds(ctx=ctx)
+        crds = self.commons.list_all_namespaced_crds(ctx=ctx)
         for crd in crds:
-            co_list = commons.list_all_custom_objects_by_type(ctx=ctx, ns=ns, crd=crd)
+            co_list = self.commons.list_all_custom_objects_by_type(ctx=ctx, ns=ns, crd=crd)
             for co in co_list:
                 objs.append(co)
-        return objs + commons.list_all_core_objects(ctx=ctx, ns=ns)
+        return objs + self.commons.list_all_core_objects(ctx=ctx, ns=ns)
 
     @staticmethod
     def get_resource_by_uid(uid, objs: list[Resource]):
@@ -118,7 +116,7 @@ class ExplorerTree(TreeControl[Resource]):
         """
         if not objs or not hierarchy:
             objs = await self.get_objs_for_ctx_ns(ctx=node.data.context, ns=node.data.namespace)
-            hierarchy = commons.get_hierarchy(objs=objs)
+            hierarchy = self.commons.get_hierarchy(objs=objs)
         # TODO: Group namespace level ConfigMaps, Secrets and SAs under 1 main kind group. i.e. All secrets under "Secrets/"
         uid_list = hierarchy.keys()
         for uid in uid_list:
