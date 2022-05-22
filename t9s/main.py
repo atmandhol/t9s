@@ -1,12 +1,16 @@
+"""
+TODO: Add a style config file and use that all over the project so people can theme it later
+"""
 from rich.console import Console
 
 from modules.widgets.header import T9s_Header
 from modules.widgets.footer import T9s_Footer
 from modules.widgets.explorer import ExplorerTree
-from modules.widgets.object_viewer import ObjectViewer
+from modules.widgets.viewer import ObjectViewer
+from modules.widgets.info import ObjectInfo
 from modules.kubernetes.objects import Resource
 from textual.app import App
-from textual.widgets import Placeholder, ScrollView, TreeControl
+from textual.widgets import ScrollView, TreeControl
 
 console = Console()
 
@@ -38,10 +42,12 @@ class T9s(App):
         self.explorer_panel = ScrollView(contents=self.explorer)
         self.viewer = ObjectViewer()
         self.viewer_panel = ScrollView(contents=self.viewer)
+        self.info = ObjectInfo()
+        self.info_panel = ScrollView(contents=self.info)
         await self.view.dock(T9s_Header(), edge="top", size=8)
         await self.view.dock(T9s_Footer(), edge="bottom")
         await self.view.dock(self.explorer_panel, edge="left", size=60, name="explorer")
-        await self.view.dock(Placeholder(), edge="left", size=40, name="info")
+        await self.view.dock(self.info_panel, edge="left", size=60, name="info")
         await self.view.dock(self.viewer_panel, edge="right", name="viewer")
 
     async def action_yaml_json_switcher(self) -> None:
@@ -56,6 +62,8 @@ class T9s(App):
 
     async def handle_tree_click(self, message: TreeControl[Resource]) -> None:
         if message.node.data.kind not in ["Context", "Namespace"]:
+            self.info.update_resource(resource=message.node.data)
+            await self.info_panel.update(self.info.render())
             self.viewer.update_resource(resource=message.node.data)
             await self.viewer_panel.update(self.viewer.render())
 
