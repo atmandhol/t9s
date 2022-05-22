@@ -24,3 +24,4 @@ class CustomResourceDefinition:
     plural: str
     scope: str = None
     version: str = None
+    printer_cols: list = None

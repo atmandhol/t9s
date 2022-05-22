@@ -68,13 +68,20 @@ class Commons:
         success, response = self.k8s.get_all_crds(self.k8s.api_ext_clients[ctx])
         if success:
             for crd in response["items"]:
+                # TODO: this will fail if multiple version of a crd are installed in a cluster
+                version = crd.get("status", {}).get("storedVersions")[0]
+                printer_cols = list()
+                for ver in crd.get("spec", {}).get("versions", [{}]):
+                    if ver.get("name") == version:
+                        printer_cols = ver.get("additionalPrinterColumns")
                 crd_list.append(
                     CustomResourceDefinition(
                         group=crd.get("spec", {}).get("group", ""),
                         kind=crd.get("spec", {}).get("names", {}).get("kind", ""),
                         plural=crd.get("spec", {}).get("names", {}).get("plural", ""),
                         scope=crd.get("spec", {}).get("scope", "Namespaced"),
-                        version=crd.get("status", {}).get("storedVersions")[0],
+                        version=version,
+                        printer_cols=printer_cols,
                     )
                 )
         return crd_list
@@ -84,6 +91,12 @@ class Commons:
         success, response = self.k8s.get_all_crds(self.k8s.api_ext_clients[ctx])
         if success:
             for crd in response["items"]:
+                # TODO: this will fail if multiple version of a crd are installed in a cluster
+                version = crd.get("status", {}).get("storedVersions")[0]
+                printer_cols = list()
+                for ver in crd.get("spec", {}).get("versions", [{}]):
+                    if ver.get("name") == version:
+                        printer_cols = ver.get("additionalPrinterColumns")
                 if crd.get("spec", {}).get("scope") == "Namespaced":
                     crd_list.append(
                         CustomResourceDefinition(
@@ -91,7 +104,8 @@ class Commons:
                             kind=crd.get("spec", {}).get("names", {}).get("kind", ""),
                             plural=crd.get("spec", {}).get("names", {}).get("plural", ""),
                             scope=crd.get("spec", {}).get("scope", "Namespaced"),
-                            version=crd.get("status", {}).get("storedVersions")[0],
+                            version=version,
+                            printer_cols=printer_cols
                         )
                     )
         return crd_list

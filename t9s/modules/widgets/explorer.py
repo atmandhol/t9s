@@ -22,6 +22,7 @@ class ExplorerTree(TreeControl[Resource]):
         self.rich_console = console
         self.k8s_helper = K8s(self.log)
         self.commons = Commons(logger=self.log)
+        self.crds = None
 
     has_focus: Reactive[bool] = Reactive(False)
 
@@ -92,8 +93,8 @@ class ExplorerTree(TreeControl[Resource]):
 
     async def get_objs_for_ctx_ns(self, ctx, ns):
         objs = list()
-        crds = self.commons.list_all_namespaced_crds(ctx=ctx)
-        for crd in crds:
+        self.crds = self.commons.list_all_namespaced_crds(ctx=ctx)
+        for crd in self.crds:
             co_list = self.commons.list_all_custom_objects_by_type(ctx=ctx, ns=ns, crd=crd)
             for co in co_list:
                 objs.append(co)
@@ -200,9 +201,18 @@ class ExplorerTree(TreeControl[Resource]):
         if kind == "Pod":
             label.stylize("#b8b6b6")
             icon = "🐳"
-        if kind in ["ConfigMap", "ServiceAccount", "Secret", "PersistentVolumeClaim"]:
+        if kind in ["ConfigMap", "Secret", "PersistentVolumeClaim"]:
             label.stylize("#b8b6b6")
             icon = "🔑"
+        if kind in ["Deployment"]:
+            label.stylize("#b8b6b6")
+            icon = "🚛"
+        if kind in ["ServiceAccount"]:
+            label.stylize("#b8b6b6")
+            icon = "🔒"
+        if kind in ["ConfigMap"]:
+            label.stylize("#b8b6b6")
+            icon = "💳"
         if kind == "Namespace":
             label.stylize("#39cbf7") if not expanded else label.stylize("bold #83dcf7")
             icon = "📂" if expanded else "📁"
