@@ -29,11 +29,13 @@ class T9s(App):
         self.explorer = None
 
     async def on_load(self) -> None:
-        await self.bind("e", "view.toggle('explorer')", "Toggle Explorer Panel")
-        await self.bind("x", "focus_explorer()", "Focus Explorer")
+        await self.bind("e", "view.toggle('explorer')", "Toggle Explorer")
         await self.bind("i", "view.toggle('info')", "Toggle Info")
-        await self.bind("c", "focus_info()", "Focus Info")
         await self.bind("y", "yaml_json_switcher()", "Toggle YAML/JSON")
+        await self.bind("r", "refresh_explorer()", "Refresh")
+        await self.bind("1", "focus_explorer()", "Focus Explorer", show=False)
+        await self.bind("2", "focus_info()", "Focus Info", show=False)
+        await self.bind("3", "focus_viewer()", "Focus Viewer", show=False)
         await self.bind("q", "quit", "Quit")
 
     # noinspection PyAttributeOutsideInit
@@ -44,6 +46,7 @@ class T9s(App):
         self.viewer_panel = ScrollView(contents=self.viewer)
         self.info = ObjectInfo()
         self.info_panel = ScrollView(contents=self.info)
+
         await self.view.dock(T9s_Header(), edge="top", size=8)
         await self.view.dock(T9s_Footer(), edge="bottom")
         await self.view.dock(self.explorer_panel, edge="left", size=60, name="explorer")
@@ -58,7 +61,13 @@ class T9s(App):
         await self.explorer.focus()
 
     async def action_focus_info(self) -> None:
-        pass
+        await self.info.focus()
+
+    async def action_focus_viewer(self) -> None:
+        await self.viewer.focus()
+
+    async def action_refresh_explorer(self) -> None:
+        self.explorer_panel.refresh(layout=True)
 
     async def handle_tree_click(self, message: TreeControl[Resource]) -> None:
         if message.node.data.kind not in ["Context", "Namespace"]:

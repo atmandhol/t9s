@@ -74,9 +74,11 @@ class ExplorerTree(TreeControl[Resource]):
         await self.load_contexts(self.root)
 
     # Data Loading methods
+    # noinspection PyTypeChecker
     async def load_contexts(self, node: TreeNode[Resource]):
         for ctx in self.k8s_helper.contexts:
-            await node.add(label=f"ctx/{ctx}", data=Resource(name=ctx, kind="Context", context=ctx))
+            ctx_node = await self.add(node_id=node.id, label=f"{ctx}", data=Resource(name=ctx, kind="Context", context=ctx))
+            await self.load_ns(node=ctx_node)
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
@@ -86,7 +88,7 @@ class ExplorerTree(TreeControl[Resource]):
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:
-                await node.add(label=f"ns/{ns}", data=Resource(name=ns, kind="Namespace", context=node.data.context, namespace=ns))
+                await node.add(label=f"{ns}", data=Resource(name=ns, kind="Namespace", context=node.data.context, namespace=ns))
         node.loaded = True
         await node.expand()
         self.refresh(layout=True)
@@ -115,7 +117,7 @@ class ExplorerTree(TreeControl[Resource]):
         :param hierarchy: hierarchy dict that specifies the UID hierarchy
         :return:
         """
-        if not objs or not hierarchy:
+        if not objs or not hierarchy and node.data.kind == "Namespace":
             objs = await self.get_objs_for_ctx_ns(ctx=node.data.context, ns=node.data.namespace)
             hierarchy = self.commons.get_hierarchy(objs=objs)
         # TODO: Group namespace level ConfigMaps, Secrets and SAs under 1 main kind group. i.e. All secrets under "Secrets/"
@@ -145,11 +147,6 @@ class ExplorerTree(TreeControl[Resource]):
                 await message.node.expand()
             else:
                 await message.node.toggle()
-
-        """
-        if not dir_entry.is_dir:
-            await self.emit(FileClick(self, dir_entry.path))
-        """
 
     def render_node(self, node: TreeNode[Resource]) -> RenderableType:
         return self.render_tree_label(
