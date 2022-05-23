@@ -8,9 +8,9 @@ from textual.widgets import TreeClick, TreeControl, TreeNode, NodeID
 # noinspection PyProtectedMember
 from textual.widgets._tree_control import NodeDataType
 
-from modules.kubernetes.k8s import K8s
-from modules.kubernetes.commons import Commons
-from modules.kubernetes.objects import Resource
+from t9s.modules.kubernetes.k8s import K8s
+from t9s.modules.kubernetes.commons import Commons
+from t9s.modules.kubernetes.objects import Resource
 from functools import lru_cache
 
 

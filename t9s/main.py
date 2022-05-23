@@ -3,12 +3,12 @@ TODO: Add a style config file and use that all over the project so people can th
 """
 from rich.console import Console
 
-from modules.widgets.header import T9s_Header
-from modules.widgets.footer import T9s_Footer
-from modules.widgets.explorer import ExplorerTree
-from modules.widgets.viewer import ObjectViewer
-from modules.widgets.info import ObjectInfo
-from modules.kubernetes.objects import Resource
+from t9s.modules.widgets.header import T9s_Header
+from t9s.modules.widgets.footer import T9s_Footer
+from t9s.modules.widgets.explorer import ExplorerTree
+from t9s.modules.widgets.viewer import ObjectViewer
+from t9s.modules.widgets.info import ObjectInfo
+from t9s.modules.kubernetes.objects import Resource
 from textual.app import App
 from textual.widgets import ScrollView, TreeControl
 

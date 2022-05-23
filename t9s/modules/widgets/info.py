@@ -7,8 +7,8 @@ from rich.text import Text
 from rich.traceback import Traceback
 from textual.widget import Widget
 
-from modules.kubernetes.objects import Resource
-from modules.utils.enums import ObjectViewerFormat
+from t9s.modules.kubernetes.objects import Resource
+from t9s.modules.utils.enums import ObjectViewerFormat
 
 
 # noinspection PyBroadException

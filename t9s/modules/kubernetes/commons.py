@@ -1,8 +1,8 @@
 import json
 import yaml
-from modules.utils.sh import SubProcessHelpers
-from modules.kubernetes.k8s import K8s
-from modules.kubernetes.objects import Resource, CustomResourceDefinition
+from t9s.modules.utils.sh import SubProcessHelpers
+from t9s.modules.kubernetes.k8s import K8s
+from t9s.modules.kubernetes.objects import Resource, CustomResourceDefinition
 
 sh = SubProcessHelpers()
 
