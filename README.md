@@ -1,6 +1,10 @@
 # t9s
 k9s inspired TUI for Tanzu Application Platform.
 
+Below is a very rough draft of what the initial TUI looks like:
+
+![t9s](assets/ex.png)
+
 ## Install t9s
 ### Prerequisites
 - Install the latest Python 3.x.x from [python.org](https://www.python.org/downloads/)
