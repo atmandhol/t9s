@@ -3,11 +3,8 @@ from concurrent.futures import wait
 
 import yaml
 import concurrent.futures
-from t9s.modules.utils.sh import SubProcessHelpers
 from t9s.modules.kubernetes.k8s import K8s
 from t9s.modules.kubernetes.objects import Resource, CustomResourceDefinition
-
-sh = SubProcessHelpers()
 
 
 # noinspection PyBroadException
@@ -16,12 +13,10 @@ class Commons:
         self.log = logger
         self.k8s = K8s(logger=self.log)
 
-    @staticmethod
-    def get_ns_list(context):
+    def get_ns_list(self, ctx):
         ns_list = list()
-        _, out, err = sh.run_proc(f"kubectl get ns -o json --context {context}")
-        response = json.loads(out.decode())
-        if not err and hasattr(response, "items"):
+        success, response = self.k8s.list_ns(client=self.k8s.core_clients[ctx])
+        if success:
             for item in response["items"]:
                 ns_list.append(item["metadata"]["name"])
         return ns_list

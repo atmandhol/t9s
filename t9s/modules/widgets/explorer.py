@@ -83,7 +83,7 @@ class ExplorerTree(TreeControl[Resource]):
         self.refresh(layout=True)
 
     async def load_ns(self, node: TreeNode[Resource]):
-        ns_list = self.commons.get_ns_list(context=node.data.context)
+        ns_list = self.commons.get_ns_list(ctx=node.data.context)
         self.log(ns_list)
         if ns_list and isinstance(ns_list, list) and len(ns_list) > 0:
             for ns in ns_list:

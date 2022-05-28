@@ -57,6 +57,14 @@ class K8s:
             return False, err
 
     @staticmethod
+    def list_ns(client: k8s.client.CoreV1Api):
+        try:
+            response = client.list_namespace(_preload_content=False)
+            return True, json.loads(response.data)
+        except ApiException as err:
+            return False, err
+
+    @staticmethod
     def list_pods_in_ns(client: k8s.client.CoreV1Api, namespace):
         try:
             response = client.list_namespaced_pod(namespace=namespace, _preload_content=False)
