@@ -47,7 +47,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_custom_objects_in_namespace(client: k8s.client.CustomObjectsApi, namespace, group, version, plural):
+    def list_custom_objects_in_ns(client: k8s.client.CustomObjectsApi, namespace, group, version, plural):
         try:
             response = client.list_namespaced_custom_object(
                 group=group, version=version, namespace=namespace, plural=plural, _preload_content=False
@@ -57,7 +57,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_pods_in_namespace(client: k8s.client.CoreV1Api, namespace):
+    def list_pods_in_ns(client: k8s.client.CoreV1Api, namespace):
         try:
             response = client.list_namespaced_pod(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)
@@ -65,7 +65,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_deployments_in_namespace(client: k8s.client.AppsV1Api, namespace):
+    def list_deployments_in_ns(client: k8s.client.AppsV1Api, namespace):
         try:
             response = client.list_namespaced_deployment(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)
@@ -73,7 +73,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_replicasets_in_namespace(client: k8s.client.AppsV1Api, namespace):
+    def list_replicasets_in_ns(client: k8s.client.AppsV1Api, namespace):
         try:
             response = client.list_namespaced_replica_set(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)
@@ -81,7 +81,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_configmaps_in_namespace(client: k8s.client.CoreV1Api, namespace):
+    def list_configmaps_in_ns(client: k8s.client.CoreV1Api, namespace):
         try:
             response = client.list_namespaced_config_map(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)
@@ -89,7 +89,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_secrets_in_namespace(client: k8s.client.CoreV1Api, namespace):
+    def list_secrets_in_ns(client: k8s.client.CoreV1Api, namespace):
         try:
             response = client.list_namespaced_secret(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)
@@ -97,7 +97,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_service_accounts_in_namespace(client: k8s.client.CoreV1Api, namespace):
+    def list_service_accounts_in_ns(client: k8s.client.CoreV1Api, namespace):
         try:
             response = client.list_namespaced_service_account(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)
@@ -105,7 +105,7 @@ class K8s:
             return False, err
 
     @staticmethod
-    def list_pv_claims_in_namespace(client: k8s.client.CoreV1Api, namespace):
+    def list_pv_claims_in_ns(client: k8s.client.CoreV1Api, namespace):
         try:
             response = client.list_namespaced_persistent_volume_claim(namespace=namespace, _preload_content=False)
             return True, json.loads(response.data)

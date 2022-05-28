@@ -22,7 +22,6 @@ class ExplorerTree(TreeControl[Resource]):
         self.rich_console = console
         self.k8s_helper = K8s(self.log)
         self.commons = Commons(logger=self.log)
-        self.crds = None
 
     has_focus: Reactive[bool] = Reactive(False)
 
@@ -94,13 +93,7 @@ class ExplorerTree(TreeControl[Resource]):
         self.refresh(layout=True)
 
     async def get_objs_for_ctx_ns(self, ctx, ns):
-        objs = list()
-        self.crds = self.commons.list_all_namespaced_crds(ctx=ctx)
-        for crd in self.crds:
-            co_list = self.commons.list_all_custom_objects_by_type(ctx=ctx, ns=ns, crd=crd)
-            for co in co_list:
-                objs.append(co)
-        return objs + self.commons.list_all_core_objects(ctx=ctx, ns=ns)
+        return self.commons.list_all_ns_objects(ctx=ctx, ns=ns)
 
     @staticmethod
     def get_resource_by_uid(uid, objs: list[Resource]):
