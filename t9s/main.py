@@ -31,7 +31,7 @@ class T9s(App):
     async def on_load(self) -> None:
         await self.bind("e", "view.toggle('explorer')", "Toggle Explorer")
         await self.bind("i", "view.toggle('info')", "Toggle Info")
-        await self.bind("y", "yaml_json_switcher()", "Toggle YAML/JSON")
+        await self.bind("y", "yaml_json_logs_switcher()", "Toggle YAML/JSON/Logs")
         await self.bind("r", "refresh_explorer()", "Refresh")
         await self.bind("1", "focus_explorer()", "Focus Explorer", show=False)
         await self.bind("2", "focus_info()", "Focus Info", show=False)
@@ -53,7 +53,7 @@ class T9s(App):
         await self.view.dock(self.info_panel, edge="left", size=60, name="info")
         await self.view.dock(self.viewer_panel, edge="right", name="viewer")
 
-    async def action_yaml_json_switcher(self) -> None:
+    async def action_yaml_json_logs_switcher(self) -> None:
         self.viewer.switch_format()
         await self.viewer_panel.update(self.viewer.render())
 

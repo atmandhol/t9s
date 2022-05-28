@@ -1,7 +1,5 @@
-import json
 from concurrent.futures import wait
 
-import yaml
 import concurrent.futures
 from t9s.modules.kubernetes.k8s import K8s
 from t9s.modules.kubernetes.objects import Resource, CustomResourceDefinition
@@ -64,7 +62,6 @@ class Commons:
             spec=item.get("spec", {}),
             status=item.get("status", {}),
             json_value=item,
-            yaml_value=yaml.safe_load(json.dumps(item)),
         )
 
     def list_all_namespaced_crds(self, ctx):

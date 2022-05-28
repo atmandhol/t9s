@@ -14,7 +14,6 @@ class Resource:
     spec: dict = None
     status: dict = None
     json_value: dict = None
-    yaml_value: str = None
 
 
 @dataclass

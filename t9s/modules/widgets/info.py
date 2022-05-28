@@ -15,7 +15,7 @@ from t9s.modules.utils.enums import ObjectViewerFormat
 class ObjectInfo(Widget):
     def __init__(self):
         super().__init__()
-        self.resource: Resource = Resource(yaml_value="No Resource Selected", json_value={"message": "No Resource Selected"})
+        self.resource: Resource = Resource(json_value={"message": "No Resource Selected"})
         self.format: ObjectViewerFormat = ObjectViewerFormat.YAML
 
     def render(self):
