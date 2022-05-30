@@ -1,6 +1,8 @@
 """
 TODO: Add a style config file and use that all over the project so people can theme it later
 """
+import sys
+
 from rich.console import Console
 
 from t9s.modules.widgets.log_viewer import LogViewer, LogUpdate
@@ -34,6 +36,7 @@ class T9s(App):
         await self.bind("i", "view.toggle('info')", "Toggle Info")
         await self.bind("y", "yaml_json_switcher()", "Toggle YAML/JSON")
         await self.bind("l", "logs_switcher()", "Toggle Logs")
+        await self.bind("k", "live_logs_switcher()", "Toggle Live Logs")
         await self.bind("1", "focus_explorer()", "Focus Explorer", show=False)
         await self.bind("2", "focus_info()", "Focus Info", show=False)
         await self.bind("3", "focus_viewer()", "Focus Viewer", show=False)
@@ -62,6 +65,13 @@ class T9s(App):
         self.viewer.switch_format()
         await self.viewer_panel.update(self.viewer.render())
 
+    async def action_live_logs_switcher(self) -> None:
+        if self.log_viewer.live_reload:
+            self.log_viewer.set_live_reload(False)
+        else:
+            self.log_viewer.set_live_reload(True)
+        await self.log_viewer_panel.update(self.log_viewer.render())
+
     async def action_focus_explorer(self) -> None:
         await self.explorer.focus()
 
@@ -86,11 +96,17 @@ class T9s(App):
             self.viewer.update_resource(resource=message.node.data)
             await self.viewer_panel.update(self.viewer.render())
             self.log_viewer.update_resource(resource=message.node.data)
-            await self.log_viewer_panel.update(self.viewer.render())
+            await self.log_viewer_panel.update(self.log_viewer.render())
 
     async def handle_log_update(self, message: LogUpdate) -> None:
-        await self.log_viewer_panel.update(message.render_op, home=False)
-        self.log_viewer_panel.scroll_in_to_view(9999999999)
+        if self.log_viewer.live_reload:
+            await self.log_viewer_panel.update(message.render_op, home=False)
+            self.log_viewer_panel.scroll_in_to_view(9999999999)
+
+    async def shutdown(self):
+        self.log_viewer.reset()
+        await super().shutdown()
+        sys.exit(0)
 
 
 T9s.run(console=console, log="textual.log")

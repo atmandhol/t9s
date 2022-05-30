@@ -77,7 +77,7 @@ class LogViewer(Widget):
         syntax = Text(self.logs)
         return Panel(
             syntax,
-            title=f"[bold][#ebae3d]Logs[/#ebae3d]",
+            title=f"[bold][#ebae3d]Logs[/#ebae3d]: {self.resource.name} - Live Reload: [{self.live_reload}]",
             border_style="#69b4ff",
         )
 
@@ -93,15 +93,8 @@ class LogViewer(Widget):
         self.live_reload = value
 
     def update_resource(self, resource: Resource) -> None:
-        # Stop all running threads
-        for t in self.log_threads:
-            t.stop()
-        # Cleanup old state
-        self.log_threads = list()
-        self.q = Queue()
-        self.logs = ""
+        self.reset()
         self.resource = resource
-
         if self.resource.kind == "Pod":
             # Get containers
             containers = list()
@@ -115,3 +108,12 @@ class LogViewer(Widget):
             self.logs = "No Logs to show"
 
         self.refresh(layout=True)
+
+    def reset(self):
+        # Stop all running threads
+        for t in self.log_threads:
+            t.stop()
+        # Cleanup old state
+        self.log_threads = list()
+        self.q = Queue()
+        self.logs = ""
