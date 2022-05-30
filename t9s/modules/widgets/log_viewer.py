@@ -1,8 +1,8 @@
 import threading
-
+import random
 import rich.repr
-from queue import Queue
 
+from queue import Queue
 from kubernetes.watch import watch
 from rich.console import RenderableType
 from rich.panel import Panel
@@ -17,6 +17,23 @@ from textual.widget import Widget
 from t9s.modules.kubernetes.commons import Commons
 from t9s.modules.kubernetes.k8s import K8s
 from t9s.modules.kubernetes.objects import Resource
+
+rich_logger_colors = [
+    "#faa005",
+    "#d49f7f",
+    "#edda7b",
+    "#bbd620",
+    "#20d629",
+    "#20d6a3",
+    "#2fd6d1",
+    "#4dc0e3",
+    "#4d9be3",
+    "#949feb",
+    "#bf94eb",
+    "#e094eb",
+    "#d945bb",
+    "#c78595",
+]
 
 
 @rich.repr.auto
@@ -35,6 +52,7 @@ class LogThread(threading.Thread):
         self.pod = pod
         self.namespace = namespace
         self.container = container
+        self.color = random.choice(rich_logger_colors)
 
     def stop(self):
         self._stop.set()
@@ -50,13 +68,13 @@ class LogThread(threading.Thread):
             namespace=self.namespace,
             container=self.container,
             pretty="true",
-            since_seconds=7*86400,
+            since_seconds=7 * 86400,
             tail_lines=100,
             timestamps=False,
         ):
             if self.stopped():
                 return
-            self.q.put_nowait(f"[{self.container}]: {event}")
+            self.q.put_nowait(f"[bold][{self.color}]<{self.container}>[/{self.color}][/bold]: {event}")
 
 
 class LogViewer(Widget):
@@ -74,7 +92,7 @@ class LogViewer(Widget):
         syntax: RenderableType
         while not self.q.empty():
             self.logs = self.logs + "\n" + self.q.get(block=False)
-        syntax = Text(self.logs)
+        syntax = self.logs
         return Panel(
             syntax,
             title=f"[bold][#ebae3d]Logs[/#ebae3d]: {self.resource.name} - Live Reload: [{self.live_reload}]",
