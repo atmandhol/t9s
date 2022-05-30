@@ -3,7 +3,6 @@ import yaml
 from rich.console import RenderableType
 from rich.panel import Panel
 from rich.syntax import Syntax
-from rich.text import Text
 from rich.traceback import Traceback
 from textual.widget import Widget
 
@@ -28,12 +27,10 @@ class ObjectViewer(Widget):
         try:
             if self.format == ObjectViewerFormat.JSON:
                 syntax = Syntax(json.dumps(self.resource.json_value, indent=2), "json", theme="native", line_numbers=True, word_wrap=True)
-            elif self.format == ObjectViewerFormat.YAML:
+            else:
                 syntax = Syntax(
                     yaml.safe_dump(yaml.safe_load(json.dumps(self.resource.json_value))), "yaml", theme="native", line_numbers=True, word_wrap=True
                 )
-            else:
-                syntax = Text("Logs")
         except Exception:
             syntax = Traceback(theme="monokai", width=None, show_locals=True)
         return Panel(
@@ -49,8 +46,6 @@ class ObjectViewer(Widget):
     def switch_format(self) -> None:
         if self.format == ObjectViewerFormat.YAML:
             self.format = ObjectViewerFormat.JSON
-        elif self.format == ObjectViewerFormat.JSON:
-            self.format = ObjectViewerFormat.LOGS
         else:
             self.format = ObjectViewerFormat.YAML
         self.refresh(layout=True)
