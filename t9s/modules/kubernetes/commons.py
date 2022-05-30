@@ -193,3 +193,10 @@ class Commons:
         # TODO: Sort items by group
 
         return objs
+
+    @staticmethod
+    def get_container_list_from_pod(pod: Resource):
+        containers = list()
+        if "spec" in pod.json_value and "containers" in pod.json_value["spec"]:
+            for container in pod.json_value["spec"]["containers"]:
+                containers.append(container["name"])
