@@ -2,9 +2,8 @@
 TODO: Add a style config file and use that all over the project so people can theme it later
 """
 from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
 
+from t9s.modules.widgets.log_viewer import LogViewer, LogUpdate
 from t9s.modules.widgets.header import T9s_Header
 from t9s.modules.widgets.footer import T9s_Footer
 from t9s.modules.widgets.explorer import ExplorerTree
@@ -48,7 +47,7 @@ class T9s(App):
         self.info_panel = ScrollView(contents=self.info)
         self.viewer = ObjectViewer()
         self.viewer_panel = ScrollView(contents=self.viewer)
-        self.log_viewer = Panel(title="logs", renderable=Text("Nothing to show"))
+        self.log_viewer = LogViewer()
         self.log_viewer_panel = ScrollView(contents=self.log_viewer)
         self.log_viewer_panel.visible = False
 
@@ -86,8 +85,12 @@ class T9s(App):
             await self.info_panel.update(self.info.render())
             self.viewer.update_resource(resource=message.node.data)
             await self.viewer_panel.update(self.viewer.render())
-            self.viewer.update_resource(resource=message.node.data)
-            await self.viewer_panel.update(self.viewer.render())
+            self.log_viewer.update_resource(resource=message.node.data)
+            await self.log_viewer_panel.update(self.viewer.render())
+
+    async def handle_log_update(self, message: LogUpdate) -> None:
+        await self.log_viewer_panel.update(message.render_op, home=False)
+        self.log_viewer_panel.scroll_in_to_view(9999999999)
 
 
 T9s.run(console=console, log="textual.log")

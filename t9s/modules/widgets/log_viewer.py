@@ -14,9 +14,9 @@ from textual._types import MessageTarget
 from textual.message import Message
 from textual.widget import Widget
 
-from modules.kubernetes.commons import Commons
-from modules.kubernetes.k8s import K8s
-from modules.kubernetes.objects import Resource
+from t9s.modules.kubernetes.commons import Commons
+from t9s.modules.kubernetes.k8s import K8s
+from t9s.modules.kubernetes.objects import Resource
 
 
 @rich.repr.auto
@@ -50,7 +50,7 @@ class LogThread(threading.Thread):
             namespace=self.namespace,
             container=self.container,
             pretty="true",
-            since_seconds=86400,
+            since_seconds=7*86400,
             tail_lines=100,
             timestamps=False,
         ):
@@ -60,13 +60,13 @@ class LogThread(threading.Thread):
 
 
 class LogViewer(Widget):
-    def __init__(self, resource):
+    def __init__(self):
         super().__init__()
         self.k8s_helper = K8s(logger=self.log)
         self.commons = Commons(logger=self.log)
         self.logs: str = ""
         self.live_reload = True
-        self.resource: Resource = resource
+        self.resource: Resource = Resource(json_value={"message": "No Resource Selected"})
         self.q: Queue = Queue()
         self.log_threads: list[LogThread] = list()
 
@@ -102,11 +102,16 @@ class LogViewer(Widget):
         self.logs = ""
         self.resource = resource
 
-        # Get containers
-        containers = self.commons.get_container_list_from_pod(self.resource)
-        for container in containers:
-            t = LogThread(self.q, self.k8s_helper.core_clients[self.resource.context], self.resource.name, self.resource.namespace, container)
-            self.log_threads.append(t)
-            t.start()
+        if self.resource.kind == "Pod":
+            # Get containers
+            containers = list()
+            for container in self.resource.json_value["spec"]["containers"]:
+                containers.append(container["name"])
+            for container in containers:
+                t = LogThread(self.q, self.k8s_helper.core_clients[self.resource.context], self.resource.name, self.resource.namespace, container)
+                self.log_threads.append(t)
+                t.start()
+        else:
+            self.logs = "No Logs to show"
 
         self.refresh(layout=True)
