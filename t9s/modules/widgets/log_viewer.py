@@ -1,12 +1,13 @@
 import threading
 import random
+import time
+
 import rich.repr
 
 from queue import Queue
 from kubernetes.watch import watch
 from rich.console import RenderableType
 from rich.panel import Panel
-from rich.text import Text
 from textual import events
 
 # noinspection PyProtectedMember
@@ -16,7 +17,7 @@ from textual.widget import Widget
 
 from t9s.modules.kubernetes.commons import Commons
 from t9s.modules.kubernetes.k8s import K8s
-from t9s.modules.kubernetes.objects import Resource
+from t9s.modules.kubernetes.objects import Resource, LogEvent
 
 rich_logger_colors = [
     "#faa005",
@@ -70,11 +71,16 @@ class LogThread(threading.Thread):
             pretty="true",
             since_seconds=7 * 86400,
             tail_lines=100,
-            timestamps=False,
+            timestamps=True,
         ):
             if self.stopped():
+                w.stop()
                 return
-            self.q.put_nowait(f"[bold][{self.color}]<{self.container}>[/{self.color}][/bold]: {event}")
+            self.q.put_nowait(
+                LogEvent(
+                    group=f"[bold][{self.color}]<{self.container}>[/{self.color}][/bold]", msg="".join(event.split(" ")[1:]), ts=event.split(" ")[0]
+                )
+            )
 
 
 class LogViewer(Widget):
@@ -82,17 +88,26 @@ class LogViewer(Widget):
         super().__init__()
         self.k8s_helper = K8s(logger=self.log)
         self.commons = Commons(logger=self.log)
-        self.logs: str = ""
+        self.logs: list[LogEvent] = list()
         self.live_reload = True
         self.resource: Resource = Resource(json_value={"message": "No Resource Selected"})
-        self.q: Queue = Queue()
+        self.q: Queue[LogEvent] = Queue()
         self.log_threads: list[LogThread] = list()
+
+    def generate_log_str(self) -> str:
+        op = str()
+        for log in self.logs:
+            op = op + f"{log.group}: {log.msg}\n"
+        return op
 
     def render(self):
         syntax: RenderableType
         while not self.q.empty():
-            self.logs = self.logs + "\n" + self.q.get(block=False)
-        syntax = self.logs
+            self.logs.append(self.q.get(block=False))
+        if len(self.logs) > 0:
+
+            self.logs.sort(key=lambda x: x.ts)
+        syntax = self.generate_log_str()
         return Panel(
             syntax,
             title=f"[bold][#ebae3d]Logs[/#ebae3d]: {self.resource.name} - Live Reload: [{self.live_reload}]",
@@ -125,8 +140,7 @@ class LogViewer(Widget):
                 self.log_threads.append(t)
                 t.start()
         else:
-            self.logs = "No Logs to show"
-
+            self.logs = [LogEvent(group=f"[bold]t9s[/bold]", ts=str(int(time.time())), msg="No Logs to show")]
         self.refresh(layout=True)
 
     def reset(self):
@@ -136,4 +150,4 @@ class LogViewer(Widget):
         # Cleanup old state
         self.log_threads = list()
         self.q = Queue()
-        self.logs = ""
+        self.logs = list()

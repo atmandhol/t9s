@@ -24,3 +24,10 @@ class CustomResourceDefinition:
     scope: str = None
     version: str = None
     printer_cols: list = None
+
+
+@dataclass
+class LogEvent:
+    group: str
+    msg: str
+    ts: str

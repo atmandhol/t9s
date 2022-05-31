@@ -101,6 +101,8 @@ class T9s(App):
     async def handle_log_update(self, message: LogUpdate) -> None:
         if self.log_viewer.live_reload:
             await self.log_viewer_panel.update(message.render_op, home=False)
+            self.log_viewer.refresh(layout=True)
+            self.log_viewer_panel.refresh(layout=True)
             self.log_viewer_panel.scroll_in_to_view(9999999999)
 
     async def shutdown(self):
