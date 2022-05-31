@@ -118,6 +118,8 @@ class LogViewer(Widget):
             containers = list()
             for container in self.resource.json_value["spec"]["containers"]:
                 containers.append(container["name"])
+            for container in self.resource.json_value["spec"]["initContainers"]:
+                containers.append(container["name"])
             for container in containers:
                 t = LogThread(self.q, self.k8s_helper.core_clients[self.resource.context], self.resource.name, self.resource.namespace, container)
                 self.log_threads.append(t)
